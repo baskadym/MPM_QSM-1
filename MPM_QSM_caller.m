@@ -45,6 +45,10 @@
 % ph_dir                 : % folder with phase inftis
 % TEs                    : % echo time in ms
 % output_dir             : % output QSM directory for a specific MPM contrast
+% mask_method            : % 'spm', 'spm_quality', 'quality', or 'load'        
+% spm_mask_thr           : mask threshold between 0 and 1 used in 'spm', 'spm_quality'
+% qmask_thr              : mask threshold between 0 and 1 used in 'spm_quality', 'quality'
+% mask_file              : mask file used if mask_method = 'load'
 % calc_mean_qsm          : % 'yes' or 'no' , if 'yes' it calculates mean QSM from all contrasts
 
 %%% Outputs:
@@ -77,26 +81,31 @@
 totstart = tic ;
 
 %%%%% USER PARAMETERS %%%%%
-para.romeo_command = '/your_path/romeo_linux_3.2.0/bin/romeo' ;
-para.in_root_dir = '/your/root/path' ;
-para.out_root_dir = '/your/output/path';
+para.romeo_command = 'romeo' ;
+para.in_root_dir = '/home/bdymerska/Documents/data/3T/Gabor_Perlaki/pdw_QSM_data' ;
+para.out_root_dir = '/home/bdymerska/Documents/data/3T/Gabor_Perlaki/pdw_QSM_data/';
 
-para.B0 = 7;
+para.mask_method= 'spm_quality';
+para.spm_mask_thr=0.5;
+para.qmask_thr=0.5;
+para.mask_file = 'you/can/load/your/mask/if/you/want.nii';
+para.B0 = 3;
 para.dipole_inv = 'Star-QSM' ;
 
-calc_mean_qsm = 'yes' ; 
+
+
 
 % directories, parameters and files specific to given contrast 
 % ensure they are in the right order (PDw, T1w, MTw) 
 % otherwise mean PDw+T1w QSM will be something different when calc_mean_qsm = 'yes':
-for run = 1:3
+for run = 1
     
     switch run
         case 1 %PDw
-            para.mag_dir = 'pdw_mfc_3dflash_v1k_0025' ; % folder with magnitude niftis
-            para.ph_dir = 'pdw_mfc_3dflash_v1k_0026' ; % folder with phase inftis
-            para.TEs = [2.2 4.58 6.96 9.34 11.72 14.1] ; % echo time in ms
-            para.output_dir = 'pdw_25_26' ; % output QSM directory for a specific MPM contrast
+            para.mag_dir = 'pdw_kp_mtflash3d_v1s_caipi_0010' ; % folder with magnitude niftis
+            para.ph_dir = 'pdw_kp_mtflash3d_v1s_caipi_RR_0022' ; % folder with phase inftis
+            para.TEs = 2.3*[1 2 3 4 5 6 7 8] ; % echo time in ms
+            para.output_dir = 'QSM_pdw' ; % output QSM directory for a specific MPM contrast
             
         case 2 % T1w
             para.mag_dir = 't1w_mfc_3dflash_v1k_0022' ;
@@ -118,27 +127,5 @@ for run = 1:3
     
 end
 
-
-if strcmp(calc_mean_qsm, 'yes')
-    
-    disp('calculating mean QSM across acquisitions')
-    QSM_pdw_t1w_mean = mean(QSM_all(:,:,:,1:2), 4) ;
-    QSM_all_mean = mean(QSM_all, 4) ;
-    
-    QSM_pdw_t1w_invrot_mean = mean(QSM_all_invrot(:,:,:,1:2), 4) ;
-    QSM_all_invrot_mean = mean(QSM_all_invrot, 4) ;
-    
-    
-    QSM_V.fname = fullfile(para.out_root_dir,'QSM_pdw_t1w_mean.nii') ;
-    spm_write_vol(QSM_V, QSM_pdw_t1w_mean) ;
-    QSM_V.fname = fullfile(para.out_root_dir,'QSM_all_mean.nii') ;
-    spm_write_vol(QSM_V, QSM_all_mean) ;
-    
-    
-    QSMinvrot_V.fname = fullfile(para.out_root_dir,'QSM_pdw_t1w_invrot_mean.nii') ;
-    spm_write_vol(QSMinvrot_V, QSM_pdw_t1w_invrot_mean) ;
-    QSMinvrot_V.fname = fullfile(para.out_root_dir,'QSM_all_invrot_mean.nii') ;
-    spm_write_vol(QSMinvrot_V, QSM_all_invrot_mean) ;
-end
 
 sprintf('total processing finished after %s' , secs2hms(toc(totstart)))
